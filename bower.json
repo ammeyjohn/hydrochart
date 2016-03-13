@@ -1,0 +1,22 @@
+{
+  "name": "hydrochart",
+  "description": "The javascript chart component in water hydraulic field.",
+  "main": "index.js",
+  "authors": [
+    "Patrick <ammeyjohn@qq.com>"
+  ],
+  "license": "MIT",
+  "moduleType": [],
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^2.2.1",
+    "d3": "^3.5.16"
+  }
+}
