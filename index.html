@@ -3,22 +3,85 @@
 <head>
 	<meta charset="UTF-8">
 	<title>HydroChart</title>
+	<style type="text/css">
+	body {
+		width: 100vw;
+		height: 100vh;
+	}
+
+    .container {
+        width: 800px;
+        height: 300px;
+        border: solid 1px black;
+    }
+	</style>
 </head>
 <body>
 	
+    <div class="container"></div>
+
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
-	<script type="text/javascript" src="src/HydroChart.js?v=6"></script>
+	<script type="text/javascript" src="bower_components/moment/min/moment-with-locales.min.js"></script>
+	<script type="text/javascript" src="src/HydroChart.js?v=10"></script>
 	<script type="text/javascript">
 		
 		var option = {
-			curves: [{
-				type: 'PumpCurve'	
-			}]
-		}
+			size: {
+				width: 800,
+				height: 300
+			}			
+		};
 
-		var chart = new HydroChart();
-		chart.draw();
+    	var curDate = moment().format('YYYY-MM-DD');
+    	var endDate = moment().add(1, 'day').format('YYYY-MM-DD');
+		var data = [{
+                    id: 1,
+                    name: '1#',
+                    type: 'CSP',
+                    dataType: 'STATUS',
+                    points: [
+                        { time: curDate + ' 0:00:00', value: 1 },
+                        { time: curDate + ' 03:00:00', value: 0 },
+                        { time: curDate + ' 07:00:00', value: 1 },
+                        { time: curDate + ' 11:00:00', value: 0 },
+                        { time: curDate + ' 15:00:00', value: 1 },
+                        { time: curDate + ' 19:00:00', value: 0 },
+                        { time: endDate + ' 00:00:00', value: 1 },
+                    ]
+                }, {
+                    id: 2,
+                    name: '2#',
+                    type: 'CSP',
+                    dataType: 'STATUS',
+                    points: [
+                        { time: curDate + ' 0:00:00', value: 1 },
+                        { time: curDate + ' 04:00:00', value: 0 },
+                        { time: curDate + ' 08:00:00', value: 1 },
+                        { time: curDate + ' 12:00:00', value: 0 },
+                        { time: curDate + ' 16:00:00', value: 1 },
+                        { time: curDate + ' 20:00:00', value: 0 },
+                        { time: endDate + ' 00:00:00', value: 1 },
+                    ]
+                }, {
+                    id: 3,
+                    name: '3#',
+                    type: 'CSP',
+                    dataType: 'STATUS',
+                    points: [
+                	    { time: curDate + ' 0:00:00', value: 1 },
+                        { time: curDate + ' 05:00:00', value: 0 },
+                        { time: curDate + ' 10:00:00', value: 1 },
+                        { time: curDate + ' 15:00:00', value: 0 },
+                        { time: curDate + ' 20:00:00', value: 1 },
+                        { time: curDate + ' 23:00:00', value: 0 },
+                        { time: endDate + ' 00:00:00', value: 1 },
+                    ]
+                }
+        	];
+
+		var chart = new HydroChart('.container', option);
+		chart.draw(data);
 
 	</script>
 </body>

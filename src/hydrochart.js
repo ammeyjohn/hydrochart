@@ -4,161 +4,104 @@
     // Defines the default chart option, 
     // this will be overrided by option in parameter.
     var default_option = {
-
         padding: {
             top: 20,
             left: 10,
             bottom: 20,
             right: 10
-        },
-        size: {
-            width: 800,
-            height: 600
         }
     }
+
+    // Defines the time format to convert string to datetime.
+    var time_format = d3.time.format('%Y-%m-%d %H:%M:%S');
 
     // Defines the hydochart type
     var HydroChart = function(ele, option) {
         this.version = '1.0';
 
-        // Defines the alias name of this pointer.
-        var chart = this;
+        var element = null, // Container element
+            option = null, // Options            
+            raw_data = null, // The raw data
+            proc_data = null, // The processed data
+            drawArgs = {}; // The arguments for chart drawing
+
+        var svg = null,
+            xScale = null,
+            yScale = null,
+            xAxis = null,
+            yScale = null;
 
         // Get the chart container
         if (isNullOrUndefine(ele)) {
-            chart.element = d3.select('body');
+            element = d3.select('body');
         } else {
             if (isString(ele)) {
-                chart.element = d3.select(ele);
+                element = d3.select(ele);
             } else {
-                chart.element = ele;
+                element = ele;
             }
         }
 
         // Get the chart option
-        chart.option = $.extend({}, option, default_option);
+        option = $.extend({}, option, default_option);
+        
+        // Compute the size of the svg        
+        if(isNullOrUndefine(option.size)) {
+            var rect = element.node().getBoundingClientRect();
+            drawArgs.size = {
+                width: rect.width,
+                height: rect.height
+            };
+        }        
 
-        var size = chart.option.size;
-        if (isNullOrUndefine(size)) {
-            var rect = chart.element.node().getBoundingClientRect()
-            size.width = rect.width;
-            size.height = rect.height;
-        }
+        //// Defines all instance methods ////
 
-        // Create draw area object.
-        var area_option = {
-            size: {
-                width: size.width - chart.option.padding.left - chart.option.padding.right,
-                height: size.height - chart.option.padding.top - chart.option.padding.bottom,
+        this.draw = function(data) {
+            proc_data = preprocess(data);
+            if (!isNullOrUndefine(proc_data)) {
+                beginDraw();
+                drawCurve();
+                drawAxis();
+                endDraw();
             }
         }
-        chart.area = new DrawArea(chart, area_option);
 
-        //// Defines instance methods ////
+        //// Defines all private methods ////
 
-        chart.draw = function() {
-            chart.area.draw(chart);
-        }
-    }
-
-    // Defines the area type to draw shapes on.
-    var DrawArea = function(chart, option) {
-
-        // Defines the alias name of this pointer.
-        var self = this;
-
-    	// To store the input arguments.
-        self.chart = chart;
-        self.option = option;
-
-        // Defines the curve array to store all curves in this area.
-        self.curves = [];
-        self.curves.push(createCurve('PumpCurve', null));
-
-        // Compute the size of this draw area
-        self.size = option.size;
-
-        // To Draw this area
-        self.draw = function() {
-            self.svg = self.chart
-                .element
-                .append('svg')
-                .attr('width', self.size.width)
-                .attr('height', self.size.height);
-
-            $.each(self.curves, function(idx, curve){
-            	curve.draw();
+        function preprocess(data) {
+            if (isNullOrUndefine(data)) {
+                console.warn("Input data is null or undfined.");
+                return null;
+            }
+            raw_data = data;
+            $.each(data, function(i, value) {
+                // Format all times
+                $.each(value.points, function(j, point) {
+                    point.formated_time = time_format.parse(point.time);
+                });
             });
+            return data;
         }
 
-        //// Defines the private methods ////
+        function beginDraw() {            
+            svg = element
+                    .append('svg')
+                    .attr('width', drawArgs.size.width)
+                    .attr('height', drawArgs.size.height);
+        }
 
-        // To create curve by curve type
-        function createCurve(curveType, option) {
-        	var curve = null;
-        	switch(curveType) {
-        		case 'PumpCurve':
-        			return new PumpCurve(self.chart, self, option);
-        		default:
-        			console.warn('The curve type "' + curveType + '" has not been supported!');
+        function drawAxis() {
 
-        	}
-        	return curve
+        }
+
+        function drawCurve() {
+
+        }
+
+        function endDraw() {
+
         }
     }
-
-    // Defines the base class of different curve types.
-    var Curve = function(chart, area, option) {
-
-    	// Defines the alias name of this pointer.
-    	var self = this;
-
-    	// To store the input arguments.
-    	self.chart = chart;
-    	self.area = area;
-    	self.option = option;
-
-    	//// Defines all virtual functions should be oerrieded.
-
-    	// Defines the draw method to render the curve.
-    	self.draw = function(data) {
-    		console.log('Curve.draw begin');
-    		var processed = self.preprocess(data);
-    		self.drawSeries();
-    		self.drawAxis();
-    		console.log('Curve.draw end');
-    	}
-
-    	self.preprocess = function(data) {
-    		console.log('Curve.preprocess');
-    	}
-
-    	self.drawAxis = function() {
-    		console.log('Curve.drawAxis');
-    	}
-
-    	self.drawSeries = function() {
-    		console.log('Curve.drawSeries');
-    	}
-    }
-
-    // Defines PumpCurve type inherit from Curve
-    var PumpCurve = function(chart, area, option) { 
-    	Curve.call(this, chart, area, option);
-
-    	this.preprocess = function(data) {
-    		console.log('PumpCurve.preprocess');
-    	}
-
-    	this.drawAxis = function() {
-    		console.log('PumpCurve.drawAxis');
-    	}
-
-    	this.drawSeries = function() {
-    		console.log('PumpCurve.drawSeries');
-    	}
-
-   	}
 
 
     //// Defines the helper functions ////
