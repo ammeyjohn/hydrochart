@@ -6,9 +6,9 @@
     var default_option = {
         padding: {
             top: 20,
-            left: 10,
-            bottom: 20,
-            right: 10
+            left: 25,
+            bottom: 30,
+            right: 20
         }
     }
 
@@ -29,7 +29,7 @@
             xScale = null,
             yScale = null,
             xAxis = null,
-            yScale = null;
+            yAxis = null;
 
         // Get the chart container
         if (isNullOrUndefine(ele)) {
@@ -83,14 +83,46 @@
             return data;
         }
 
+        var describe = {
+        	startTime: time_format.parse('2016-3-15 0:00:00'),
+        	endTime: time_format.parse('2016-3-16 0:00:00')
+        }
+
         function beginDraw() {            
             svg = element
                     .append('svg')
                     .attr('width', drawArgs.size.width)
                     .attr('height', drawArgs.size.height);
+
+            var xScaleWidth = drawArgs.size.width - option.padding.left - option.padding.right;
+            xScale = d3.time.scale()
+                       	.domain([describe.startTime, describe.endTime])
+                       	.range([0, xScaleWidth]); 
+
+            var yScaleHeight = drawArgs.size.height - option.padding.top - option.padding.bottom;
+            yScale = d3.scale.ordinal()
+		                .domain(d3.map(proc_data, function (d) { return d.name }).keys())
+        		        .rangeRoundBands([0, yScaleHeight]);
+
         }
 
         function drawAxis() {
+            xAxis = d3.svg.axis()
+                		.scale(xScale)
+                		.tickFormat(d3.time.format('%H:%M'))
+                		.orient('bottom');
+            svg.append('g')
+                .attr('class', 'axis')
+                .attr('transform', 'translate(' + option.padding.left + ',' + (drawArgs.size.height - option.padding.bottom) + ')')
+                .call(xAxis);
+
+            yAxis = d3.svg.axis()
+                		.scale(yScale)
+                		.orient('left');
+            svg.append('g')
+                .attr('class', 'axis')
+                .attr('transform', 'translate(' + option.padding.left + ',' + option.padding.top + ')')
+                .call(yAxis);
 
         }
 
