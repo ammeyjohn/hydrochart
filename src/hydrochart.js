@@ -12,11 +12,18 @@
         }
     }
 
+    // Defines all constant values
+    var MINUTES_PER_DAY = 1440;
+    var BAR_WIDTH = 30;
+    var BAR_GAP_WIDTH = 5;
+    var CLASS_OPEN_STATE = 'rect open';
+    var CLASS_CLOSE_STATE = 'rect close';
+
     // Defines the time format to convert string to datetime.
     var time_format = d3.time.format('%Y-%m-%d %H:%M:%S');
 
     // Defines the hydochart type
-    var HydroChart = function(ele, option) {
+    var HydroChart = function(ele, opt) {
         this.version = '1.0';
 
         var element = null, // Container element
@@ -43,7 +50,7 @@
         }
 
         // Get the chart option
-        option = $.extend({}, option, default_option);
+        option = $.extend({}, default_option, opt);
         
         // Compute the size of the svg        
         if(isNullOrUndefine(option.size)) {
@@ -52,21 +59,26 @@
                 width: rect.width,
                 height: rect.height
             };
-        }        
+        } else {
+            drawArgs.size = option.size;
+        }   
 
         //// Defines all instance methods ////
 
         this.draw = function(data) {
-            proc_data = preprocess(data);
-            if (!isNullOrUndefine(proc_data)) {
-                beginDraw();
-                drawCurve();
-                drawAxis();
-                endDraw();
-            }
+            preprocess(data);
+            beginDraw();
+            drawCurve();
+            drawAxis();
+            endDraw();
         }
 
         //// Defines all private methods ////
+
+        var describe = {
+        	startTime: null,
+        	endTime: null
+        }
 
         function preprocess(data) {
             if (isNullOrUndefine(data)) {
@@ -74,19 +86,41 @@
                 return null;
             }
             raw_data = data;
-            $.each(data, function(i, value) {
-                // Format all times
-                $.each(value.points, function(j, point) {
-                    point.formated_time = time_format.parse(point.time);
-                });
-            });
-            return data;
+            proc_data = [];
+
+            for(var i = 0; i < data.length; i++) {
+            	var value = data[i];
+            	var points = data[i].points;
+
+	            for(var j = points.length - 1; j >= 0; j--) {
+	            	var point = points[j];
+
+                	var d = {	
+                		id: value.id,
+                		text: value.name,
+                		time: time_format.parse(point.time),
+                		value: point.value
+                	};
+
+                	if(j == points.length - 1) {
+                		d.next_time = d.time;
+                	} else {
+                		d.next_time = proc_data[0].time;	
+                	}
+
+                	console.log(d);
+                	proc_data.unshift(d);
+
+                	if(describe.startTime === null || d.time <= describe.startTime) {
+                		describe.startTime = d.time;
+                	}
+                	if(describe.endTime === null || d.time >= describe.endTime) {
+                		describe.endTime = d.time;
+                	}
+	            }
+            }
         }
 
-        var describe = {
-        	startTime: time_format.parse('2016-3-15 0:00:00'),
-        	endTime: time_format.parse('2016-3-16 0:00:00')
-        }
 
         function beginDraw() {            
             svg = element
@@ -101,7 +135,7 @@
 
             var yScaleHeight = drawArgs.size.height - option.padding.top - option.padding.bottom;
             yScale = d3.scale.ordinal()
-		                .domain(d3.map(proc_data, function (d) { return d.name }).keys())
+		                .domain(d3.map(proc_data, function (d) { return d.text }).keys())
         		        .rangeRoundBands([0, yScaleHeight]);
 
         }
@@ -127,6 +161,25 @@
         }
 
         function drawCurve() {
+        	svg.selectAll('.rect')
+        	   .data(proc_data)
+        	   .enter()
+        	   .append('rect')
+               .attr('class', function (d, i) {
+                   return d.value >= 1 ? CLASS_OPEN_STATE : CLASS_CLOSE_STATE;
+               })
+               .attr('x', function (d, i) {
+                   return xScale(d.time) + option.padding.left;
+               })
+               .attr('y', function (d, i) {
+                   return yScale(d.text) + option.padding.top + (BAR_WIDTH / 2);
+               })
+               .attr('width', function (d, i) {
+                   return xScale(d.next_time) - xScale(d.time);
+               })
+               .attr('height', function (d, i) {
+                   return BAR_WIDTH;
+               });
 
         }
 
