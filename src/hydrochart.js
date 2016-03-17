@@ -14,8 +14,9 @@
 
     // Defines all constant values
     var MINUTES_PER_DAY = 1440;
-    var BAR_WIDTH = 30;
+    var BAR_WIDTH = 22;    
     var BAR_GAP_WIDTH = 5;
+    var AXIS_WIDTH = 20;
     var CLASS_OPEN_STATE = 'rect open';
     var CLASS_CLOSE_STATE = 'rect close';
 
@@ -50,18 +51,7 @@
         }
 
         // Get the chart option
-        option = $.extend({}, default_option, opt);
-        
-        // Compute the size of the svg        
-        if(isNullOrUndefine(option.size)) {
-            var rect = element.node().getBoundingClientRect();
-            drawArgs.size = {
-                width: rect.width,
-                height: rect.height
-            };
-        } else {
-            drawArgs.size = option.size;
-        }   
+        option = $.extend({}, default_option, opt);    
 
         //// Defines all instance methods ////
 
@@ -77,7 +67,8 @@
 
         var describe = {
         	startTime: null,
-        	endTime: null
+        	endTime: null,
+            barCount: 0
         }
 
         function preprocess(data) {
@@ -87,6 +78,9 @@
             }
             raw_data = data;
             proc_data = [];
+
+            // Statistics the bar count
+            describe.barCount = data.length;
 
             for(var i = 0; i < data.length; i++) {
             	var value = data[i];
@@ -108,7 +102,6 @@
                 		d.next_time = proc_data[0].time;	
                 	}
 
-                	console.log(d);
                 	proc_data.unshift(d);
 
                 	if(describe.startTime === null || d.time <= describe.startTime) {
@@ -122,7 +115,24 @@
         }
 
 
-        function beginDraw() {            
+        function beginDraw() {  
+
+            // Compute the size of the svg        
+            if(isNullOrUndefine(option.size)) {
+                var rect = element.node().getBoundingClientRect();
+                drawArgs.size = {                    
+                    width: rect.width,
+                    height: rect.height
+                };
+            } else {
+                drawArgs.size = option.size;
+            }
+
+            var chartHeight = option.padding.top + option.padding.bottom +
+                              describe.barCount * (BAR_WIDTH + BAR_GAP_WIDTH) + 
+                              AXIS_WIDTH;
+            drawArgs.size.height = chartHeight;                              
+
             svg = element
                     .append('svg')
                     .attr('width', drawArgs.size.width)
@@ -163,7 +173,7 @@
         function drawCurve() {
         	svg.selectAll('.rect')
         	   .data(proc_data)
-        	   .enter()
+        	   .enter()               
         	   .append('rect')
                .attr('class', function (d, i) {
                    return d.value >= 1 ? CLASS_OPEN_STATE : CLASS_CLOSE_STATE;
@@ -172,7 +182,7 @@
                    return xScale(d.time) + option.padding.left;
                })
                .attr('y', function (d, i) {
-                   return yScale(d.text) + option.padding.top + (BAR_WIDTH / 2);
+                   return yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) - BAR_GAP_WIDTH;
                })
                .attr('width', function (d, i) {
                    return xScale(d.next_time) - xScale(d.time);
