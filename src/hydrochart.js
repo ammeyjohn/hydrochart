@@ -42,7 +42,8 @@
             xAxis = null,
             yAxis = null;
 
-        var hoverLine = null;
+        var hoverLine = null,
+            hoverText = null;
 
         // Get the chart container
         if (isNullOrUndefine(ele)) {
@@ -239,27 +240,51 @@
         function endDraw() {
 
             // Create the mouse pointer line
-            hoverLine = svg.append("g")
-                .append("line")
-                .attr('class', 'index_line')
+            hoverLine = svg.append("line")
+                .attr('class', 'hover_line')
                 .classed("hide", false)
                 .attr("x1", -1)
                 .attr("x2", -1)
                 .attr("y1", option.padding.top)
                 .attr("y2", drawArgs.size.height - option.padding.bottom);
 
+            // Create the hover text.
+            hoverText = svg.append('text')
+                           .attr('class', 'hover_text')
+                           .text('00:00')
+                           .style("opacity", 0)
+                           .attr('x', -1)
+                           .attr('y', option.padding.top + 5);
+
             // Bind mouse events on svg element;            
             svg.on('mousemove', function() {
                 var pos = d3.mouse(this);
+
+                // Show or hide the hover line and move it.
                 if (inBox(pos[0], pos[1])) {
                     hoverLine.classed("hide", false)
                              .attr("x1", pos[0])
-                             .attr("x2", pos[0])
+                             .attr("x2", pos[0])       
+
+                    var time = xScale.invert(pos[0] - option.padding.left);
+                    var text = time.toLocaleTimeString('zh-CN', {hour12: false}).substr(0, 5);
+                    hoverText.style("opacity", 1)
+                             .text(text)
+                             .attr("x", pos[0] + 5);
+
+                    // If the hover text move the right, 
+                    // the text should be show on the right side of the hover line.
+                    if(pos[0] + 32 >= drawArgs.size.width - option.padding.right) {
+                        hoverText.attr('x', pos[0] - 32);
+                    }
+
                 } else {
                     hoverLine.classed("hide", true)
                              .attr("x1", -1)
                              .attr("x2", -1)
-                }
+                    hoverText.style("opacity", 0)
+                             .attr("x", -1);                                                    
+                }                
             });
         }
 
