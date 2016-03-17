@@ -124,14 +124,15 @@
                     width: rect.width,
                     height: rect.height
                 };
+
+                // Calculate the chart height if not be set.
+                var chartHeight = option.padding.top + option.padding.bottom +
+                                  describe.barCount * (BAR_WIDTH + BAR_GAP_WIDTH) + 
+                                  AXIS_WIDTH;
+                drawArgs.size.height = chartHeight;                              
             } else {
                 drawArgs.size = option.size;
             }
-
-            var chartHeight = option.padding.top + option.padding.bottom +
-                              describe.barCount * (BAR_WIDTH + BAR_GAP_WIDTH) + 
-                              AXIS_WIDTH;
-            drawArgs.size.height = chartHeight;                              
 
             svg = element
                     .append('svg')
@@ -171,10 +172,15 @@
         }
 
         function drawCurve() {
-        	svg.selectAll('.rect')
-        	   .data(proc_data)
-        	   .enter()               
-        	   .append('rect')
+            drawCurveBar();
+            drawCurveText();
+        }
+
+        function drawCurveBar() {
+            svg.selectAll('.rect')
+               .data(proc_data)
+               .enter()               
+               .append('rect')
                .attr('class', function (d, i) {
                    return d.value >= 1 ? CLASS_OPEN_STATE : CLASS_CLOSE_STATE;
                })
@@ -190,7 +196,28 @@
                .attr('height', function (d, i) {
                    return BAR_WIDTH;
                });
+        }
 
+        function drawCurveText() {
+            svg.selectAll('.text')
+               .data(proc_data)               
+               .enter()
+               .append('text')               
+               .filter(function(d) { 
+                    return d.time !== d.next_time;
+                })               
+               .attr('class', 'text')
+               .text(function(d) {
+                    if(d.value === 0) return '关';
+                    else if(d.value === 1) return '开';
+                    else return parseFloat(d.value).toFixed(0).toString();
+                })
+               .attr('x', function (d, i) {
+                   return xScale(d.time) + option.padding.left + 10;
+               })
+               .attr('y', function (d, i) {
+                   return yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) + 10;
+               });
         }
 
         function endDraw() {
