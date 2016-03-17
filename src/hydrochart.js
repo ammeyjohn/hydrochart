@@ -179,21 +179,25 @@
         function drawCurveBar() {
             svg.selectAll('.rect')
                .data(proc_data)
-               .enter()               
+               .enter()
                .append('rect')
                .attr('class', function (d, i) {
                    return d.value >= 1 ? CLASS_OPEN_STATE : CLASS_CLOSE_STATE;
                })
                .attr('x', function (d, i) {
-                   return xScale(d.time) + option.padding.left;
+                   d.x = xScale(d.time) + option.padding.left;
+                   return d.x;
                })
                .attr('y', function (d, i) {
-                   return yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) - BAR_GAP_WIDTH;
+                   d.y = yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) - BAR_GAP_WIDTH;
+                   return d.y;
                })
                .attr('width', function (d, i) {
-                   return xScale(d.next_time) - xScale(d.time);
+                   d.width = xScale(d.next_time) - xScale(d.time);
+                   return d.width;
                })
                .attr('height', function (d, i) {
+                   d.height = BAR_WIDTH;
                    return BAR_WIDTH;
                });
         }
@@ -203,17 +207,24 @@
                .data(proc_data)               
                .enter()
                .append('text')               
-               .filter(function(d) { 
-                    return d.time !== d.next_time;
+               .filter(function(d) {
+                    return d.width > 15 && d.time !== d.next_time;
                 })               
                .attr('class', 'text')
                .text(function(d) {
-                    if(d.value === 0) return '关';
-                    else if(d.value === 1) return '开';
-                    else return parseFloat(d.value).toFixed(0).toString();
+                    d.label_text = '';
+                    if(d.value === 0) d.label_text = '关';
+                    else if(d.value === 1) d.label_text = '开';                    
+                    else { 
+                        d.label_text = parseFloat(d.value).toFixed(0).toString();
+                        if(d.width > 34) {
+                            d.label_text += ' Hz';
+                        }
+                    }                    
+                    return d.label_text;
                 })
                .attr('x', function (d, i) {
-                   return xScale(d.time) + option.padding.left + 10;
+                   return xScale(d.time) + option.padding.left + 5;
                })
                .attr('y', function (d, i) {
                    return yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) + 10;
