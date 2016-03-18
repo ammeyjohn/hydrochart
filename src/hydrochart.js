@@ -67,18 +67,17 @@
 
         this.draw = function(data) {
             preprocess(data);
-            beginDraw();
+            beginDraw();            
             drawCurve();
-            drawAxis();
-            endDraw();
+            drawAxis();            
+            //endDraw();
         }
 
         //// Defines all private methods ////
 
         var describe = {
             startTime: null,
-            endTime: null,
-            barCount: 0
+            endTime: null
         }
 
         function preprocess(data) {
@@ -87,43 +86,53 @@
                 return null;
             }
             raw_data = data;
-            proc_data = [];
+            proc_data = d3.map(raw_data, function(d) { return d.name });
+            proc_data.forEach(function(_, d) {
 
-            // Statistics the bar count
-            describe.barCount = data.length;
+                var points = d.points;
 
-            for (var i = 0; i < data.length; i++) {
-                var value = data[i];
-                var points = data[i].points;
-
-                for (var j = points.length - 1; j >= 0; j--) {
-                    var point = points[j];
-
-                    var d = {
-                        id: value.id,
-                        text: value.name,
-                        time: time_format.parse(point.time),
-                        value: parseInt(point.value.toFixed(0)),
-                        unit: 'Hz',
-                        data: data
-                    };
-
-                    if (j == points.length - 1) {
-                        d.next_time = d.time;
-                    } else {
-                        d.next_time = proc_data[0].time;
-                    }
-
-                    proc_data.unshift(d);
-
-                    if (describe.startTime === null || d.time <= describe.startTime) {
-                        describe.startTime = d.time;
-                    }
-                    if (describe.endTime === null || d.time >= describe.endTime) {
-                        describe.endTime = d.time;
-                    }
+                // Try to convert time string to Date object.
+                for(var i in points) {
+                    if(isString(points[i].time)) {                        
+                        points[i].time = time_format.parse(points[i].time);
+                        points[i].id = d.id;
+                    }                    
                 }
-            }
+
+                // Sort all values by time
+                var sorted_points = points.sort(function(a, b){ return a.time - b.time; });         
+
+                // Merges the points with same value.
+                if(sorted_points.length > 1) {
+                    var merged_points = [ sorted_points[0] ];
+                    for(var i = 1, j = sorted_points.length; i < j; i++) {
+                        if(sorted_points[i].value !== sorted_points[i-1].value) {
+                            merged_points.push(sorted_points[i]);
+                        }                        
+                    }
+                    points = merged_points;
+                }
+                            
+                for(var i = 0, j = points.length; i < j; i++) {  
+
+                    points[i].parent = d;
+
+                    // Make relation between neibour values  
+                    if(i > 0) { points[i].prev = points[i-1]; }
+                    if(i < j - 1) { points[i].next = points[i+1]; }
+
+                    // Prepare the data describe
+                    if (describe.startTime === null || points[i].time <= describe.startTime) {
+                        describe.startTime = points[i].time;
+                    }
+                    if (describe.endTime === null || points[i].time >= describe.endTime) {
+                        describe.endTime = points[i].time;
+                    }                    
+                }                
+
+
+                d.points = points;
+            });
         }
 
         function beginDraw() {
@@ -138,7 +147,7 @@
 
                 // Calculate the chart height if not be set.
                 var chartHeight = option.padding.top + option.padding.bottom +
-                    describe.barCount * (BAR_WIDTH + BAR_GAP_WIDTH) +
+                    proc_data.size() * (BAR_WIDTH + BAR_GAP_WIDTH) +
                     AXIS_WIDTH;
                 drawArgs.size.height = chartHeight;
             } else {
@@ -158,9 +167,7 @@
 
             var yScaleHeight = drawArgs.size.height - option.padding.top - option.padding.bottom;
             yScale = d3.scale.ordinal()
-                .domain(d3.map(proc_data, function(d) {
-                    return d.text
-                }).keys())
+                .domain(proc_data.keys())
                 .rangeRoundBands([0, yScaleHeight]);
 
         }
@@ -187,33 +194,44 @@
 
         function drawCurve() {
             drawCurveBar();
-            drawCurveText();
+            //drawCurveText();
         }
 
         function drawCurveBar() {
-            svg.selectAll('.rect')
-                .data(proc_data)
-                .enter()
-                .append('rect')
-                .attr('class', function(d, i) {
-                    return d.value >= 1 ? CLASS_OPEN_STATE : CLASS_CLOSE_STATE;
-                })
-                .attr('x', function(d, i) {
-                    d.x = xScale(d.time) + option.padding.left;
-                    return d.x;
-                })
-                .attr('y', function(d, i) {
-                    d.y = yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) - BAR_STROKE_WIDTH;
-                    return d.y;
-                })
-                .attr('width', function(d, i) {
-                    d.width = xScale(d.next_time) - xScale(d.time);
-                    return d.width;
-                })
-                .attr('height', function(d, i) {
-                    d.height = BAR_WIDTH;
-                    return BAR_WIDTH;
-                });
+
+            proc_data.forEach(function(key, d){
+
+                var top = yScale(d.name) + option.padding.top + (BAR_WIDTH / 2) - BAR_STROKE_WIDTH;
+                var g = svg.append('g')
+                           .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
+
+                g.selectAll('.rect')
+                    .data(d.points)
+                    .enter()
+                    .append('rect')
+                    .attr('class', function(d, i) {
+                        return d.value >= 1 ? CLASS_OPEN_STATE : CLASS_CLOSE_STATE;
+                    })
+                    .attr('x', function(d, i) {
+                        d.x = xScale(d.time);
+                        return d.x;
+                    })
+                    .attr('y', function(d, i) {
+                        d.y = yScale(d.parent.name);
+                        return d.y;
+                    })
+                    .attr('width', function(d, i) {                        
+                        d.width = 0;
+                        if(d.next) { 
+                            d.width = xScale(d.next.time) - xScale(d.time);
+                        }
+                        return d.width;
+                    })
+                    .attr('height', function(d, i) {
+                        d.height = BAR_WIDTH;
+                        return BAR_WIDTH;
+                    });
+            });
         }
 
         function drawCurveText() {
@@ -377,6 +395,14 @@
     // Check whether the type of the obj is string.
     var isString = function(obj) {
         return isNullOrUndefine(obj) ? false : typeof obj === 'string';
+    }
+
+    var getFirst = function(values) {
+        return values[0];
+    }
+
+    var getLast = function(values) {
+        return values[values.length-1];
     }
 
     //// Exports HydroChart Component ////
