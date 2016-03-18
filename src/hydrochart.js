@@ -18,10 +18,13 @@
     // Defines all constant values
     var MINUTES_PER_DAY = 1440;
     var BAR_WIDTH = 22;
-    var BAR_GAP_WIDTH = 5;
+    var BAR_STROKE_WIDTH = 2;
+    var BAR_GAP_WIDTH = 10;
     var AXIS_WIDTH = 20;
     var CLASS_OPEN_STATE = 'rect open';
     var CLASS_CLOSE_STATE = 'rect close';
+    var CLASS_FAULT_STATE = 'rect fault';
+    var TEXT_WIDTH = 14;
 
     // Defines the time format to convert string to datetime.
     var time_format = d3.time.format('%Y-%m-%d %H:%M:%S');
@@ -43,7 +46,8 @@
             yAxis = null;
 
         var hoverLine = null,
-            hoverText = null;
+            hoverText = null,
+            tooltips = [];
 
         // Get the chart container
         if (isNullOrUndefine(ele)) {
@@ -99,7 +103,9 @@
                         id: value.id,
                         text: value.name,
                         time: time_format.parse(point.time),
-                        value: point.value
+                        value: parseInt(point.value.toFixed(0)),
+                        unit: 'Hz',
+                        data: data
                     };
 
                     if (j == points.length - 1) {
@@ -145,9 +151,10 @@
                 .attr('height', drawArgs.size.height);
 
             var xScaleWidth = drawArgs.size.width - option.padding.left - option.padding.right;
-            xScale = d3.time.scale()
+            xScale = d3.time.scale()                
                 .domain([describe.startTime, describe.endTime])
-                .range([0, xScaleWidth]);
+                .nice(d3.time.hour)
+                .range([0, xScaleWidth]);            
 
             var yScaleHeight = drawArgs.size.height - option.padding.top - option.padding.bottom;
             yScale = d3.scale.ordinal()
@@ -162,10 +169,11 @@
             xAxis = d3.svg.axis()
                 .scale(xScale)
                 .tickFormat(d3.time.format('%H:%M'))
+                .ticks(24)
                 .orient('bottom');
             svg.append('g')
                 .attr('class', 'axis')
-                .attr('transform', 'translate(' + option.padding.left + ',' + (drawArgs.size.height - option.padding.bottom) + ')')
+                .attr('transform', 'translate(' + option.padding.left + ',' + (drawArgs.size.height - option.padding.bottom) + ')')                
                 .call(xAxis);
 
             yAxis = d3.svg.axis()
@@ -195,7 +203,7 @@
                     return d.x;
                 })
                 .attr('y', function(d, i) {
-                    d.y = yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) - BAR_GAP_WIDTH;
+                    d.y = yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) - BAR_STROKE_WIDTH;
                     return d.y;
                 })
                 .attr('width', function(d, i) {
@@ -218,27 +226,38 @@
                 })
                 .attr('class', 'label')
                 .text(function(d) {
-                    d.label_text = '';
-                    if (d.value === 0) d.label_text = '关';
-                    else if (d.value === 1) d.label_text = '开';
-                    else {
-                        d.label_text = parseFloat(d.value).toFixed(0).toString();
-                        if (d.width > 34) {
-                            d.label_text += ' Hz';
-                        }
-                    }
+                    d.label_text = formatValue(d.value, d.unit);
                     return d.label_text;
                 })
                 .attr('x', function(d, i) {
                     return xScale(d.time) + option.padding.left + 5;
                 })
                 .attr('y', function(d, i) {
-                    return yScale(d.text) + option.padding.top + (BAR_WIDTH / 2) + 10;
+                    return yScale(d.text) + option.padding.top + TEXT_WIDTH + (BAR_WIDTH / 2) - 1;
                 });
         }
 
         function endDraw() {
 
+            createHovers();
+            createTooltips();
+
+            // Bind mouse events on svg element;            
+            svg.on('mousemove', function() {
+                var pos = d3.mouse(this);
+
+                // Show or hide the hover line and move it.
+                if (inBox(pos[0], pos[1])) {
+                    showHovers(pos);
+                    showTooltips(pos);
+                } else {
+                    hideHovers(pos);
+                    hideTooltips(pos);
+                }                
+            });
+        }
+
+        function createHovers() {
             // Create the mouse pointer line
             hoverLine = svg.append("line")
                 .attr('class', 'hover_line')
@@ -249,56 +268,106 @@
                 .attr("y2", drawArgs.size.height - option.padding.bottom);
 
             // Create the hover text.
+            /*
             hoverText = svg.append('text')
-                           .attr('class', 'hover_text')
-                           .text('00:00')
-                           .style("opacity", 0)
-                           .attr('x', -1)
-                           .attr('y', option.padding.top + 5);
+                .attr('class', 'hover_text')
+                .text('00:00')
+                .style('opacity', 0)
+                .attr('x', -1)
+                .attr('y', option.padding.top + 8);
+            */
+        }
 
-            // Bind mouse events on svg element;            
-            svg.on('mousemove', function() {
-                var pos = d3.mouse(this);
+        function showHovers(pos) {
+            var mouseX = pos[0];
+            hoverLine.classed("hide", false)
+                .attr("x1", mouseX)
+                .attr("x2", mouseX)
 
-                // Show or hide the hover line and move it.
-                if (inBox(pos[0], pos[1])) {
-                    hoverLine.classed("hide", false)
-                             .attr("x1", pos[0])
-                             .attr("x2", pos[0])       
+            /*
+            var time = xScale.invert(mouseX - option.padding.left);
+            var text = time.toLocaleTimeString('zh-CN', {
+                hour12: false
+            }).substr(0, 5);
+            hoverText.style('opacity', 1)
+                .text(text)
+                .attr("x", mouseX - 31);
+            */
+        }
 
-                    var time = xScale.invert(pos[0] - option.padding.left);
-                    var text = time.toLocaleTimeString('zh-CN', {hour12: false}).substr(0, 5);
-                    hoverText.style("opacity", 1)
-                             .text(text)
-                             .attr("x", pos[0] + 5);
+        function hideHovers(pos) {
+            hoverLine.classed("hide", true)
+                .attr("x1", -1)
+                .attr("x2", -1)
+            /*
+            hoverText.style('opacity', 0)
+                .attr("x", -1);            
+            */
+        }
 
-                    // If the hover text move the right, 
-                    // the text should be show on the right side of the hover line.
-                    if(pos[0] + 32 >= drawArgs.size.width - option.padding.right) {
-                        hoverText.attr('x', pos[0] - 32);
-                    }
-
-                } else {
-                    hoverLine.classed("hide", true)
-                             .attr("x1", -1)
-                             .attr("x2", -1)
-                    hoverText.style("opacity", 0)
-                             .attr("x", -1);                                                    
-                }                
+        function createTooltips() {
+            var keys = d3.map(proc_data, function(d) { return d.text }).keys();
+            $.each(keys, function(i, key){
+                var y = yScale(key) + option.padding.top + TEXT_WIDTH / 2;
+                var tooltip = svg.append('text')
+                                 .attr('class', 'tooltip')
+                                 .text('00:00')
+                                 .style('opacity', 0)
+                                 .attr('x', -1)
+                                 .attr('y', y);
+                tooltips.push(tooltip);
             });
         }
 
+        function showTooltips(pos) {
+            var time = xScale.invert(pos[0] - option.padding.left);
+            var searcher = d3.bisector(function(d) { return d.time; }).left;
+            for (var i = 0, j = tooltips.length; i < j; i++) {                
+
+                var idx = searcher(proc_data, time);
+                var d = proc_data[idx];
+                var text = d.text + ' ' + formatTime(time) + ' ' + formatValue(d.value, d.unit);
+
+                var tooltip = tooltips[i]
+                tooltip.style('opacity', 1)
+                       .text(text)
+                       .attr('class', 'tooltip')                    
+                       .attr('x', pos[0] + 5);
+            }
+        }
+
+        function hideTooltips(pos) {
+            for (var i = 0, j = tooltips.length; i < j; i++) {                
+                tooltips[i].style('opacity', 0)
+                           .attr('x', -1);
+            }            
+        }
+
         // Chech whether the given coordination in available bound.
-        var inBox = function(x, y) {
+        function inBox(x, y) {
             return x >= option.padding.left &&
                 x <= drawArgs.size.width - option.padding.right &&
                 y >= option.padding.top &&
                 y <= drawArgs.size.height - option.padding.bottom;
         }
+
+        function formatValue(value, unit) {
+            var text = '';
+            if (value === 0) text = '关';
+            else if (value === 1) text = '开';
+            else text = value.toString() + ' ' + unit;
+            return text;
+        }            
     }
 
 
     //// Defines the helper functions ////
+
+    var formatTime = function(time) {
+        var dateStr = time.getFullYear() + '-' + time.getMonth() + '-' +  time.getDate();
+        var timeStr = time.toLocaleTimeString('zh-CN', { hour12: false }).substr(0, 5);
+        return dateStr + ' ' + timeStr;        
+    }
 
     // Check whether the obj is null or undfined.
     var isNullOrUndefine = function(obj) {
