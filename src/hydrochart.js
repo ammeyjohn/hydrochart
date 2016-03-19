@@ -70,9 +70,9 @@
 
         this.draw = function(data) {
             preprocess(data);
-            //beginDraw();
+            beginDraw();
             //drawCurve();
-            //drawAxis();
+            drawAxis();
             //endDraw();
         }
 
@@ -143,7 +143,7 @@
 
                     var last = getLast(merged_values);
                     if (last.time.getHours() !== 0 || last.time.getMinutes() !== 0) {
-
+                        // TODO: to process the timeline if the last point is not 23:59 or 0:00 in next day
                     }
                 }
 
@@ -174,34 +174,34 @@
             // Compute the size of the svg        
             if (isNullOrUndefine(option.size)) {
                 var rect = element.node().getBoundingClientRect();
-                drawArgs.size = {
+                params.size = {
                     width: rect.width,
                     height: rect.height
                 };
 
                 // Calculate the chart height if not be set.
                 var chartHeight = option.padding.top + option.padding.bottom +
-                    proc_data.size() * (BAR_WIDTH + BAR_GAP_WIDTH) +
+                    describe.barCount * (BAR_WIDTH + BAR_GAP_WIDTH) +
                     AXIS_WIDTH;
-                drawArgs.size.height = chartHeight;
+                params.size.height = chartHeight;
             } else {
-                drawArgs.size = option.size;
+                params.size = option.size;
             }
 
             svg = element
                 .append('svg')
-                .attr('width', drawArgs.size.width)
-                .attr('height', drawArgs.size.height);
+                .attr('width', params.size.width)
+                .attr('height', params.size.height);
 
-            var xScaleWidth = drawArgs.size.width - option.padding.left - option.padding.right;
+            var xScaleWidth = params.size.width - option.padding.left - option.padding.right;
             xScale = d3.time.scale()
                 .domain([describe.startTime, describe.endTime])
                 .nice(d3.time.hour)
                 .range([0, xScaleWidth]);
 
-            var yScaleHeight = drawArgs.size.height - option.padding.top - option.padding.bottom;
+            var yScaleHeight = params.size.height - option.padding.top - option.padding.bottom;
             yScale = d3.scale.ordinal()
-                .domain(proc_data.keys())
+                .domain(describe.barNames)
                 .rangeRoundBands([0, yScaleHeight]);
 
         }
@@ -214,7 +214,7 @@
                 .orient('bottom');
             svg.append('g')
                 .attr('class', 'axis')
-                .attr('transform', 'translate(' + option.padding.left + ',' + (drawArgs.size.height - option.padding.bottom) + ')')
+                .attr('transform', 'translate(' + option.padding.left + ',' + (params.size.height - option.padding.bottom) + ')')
                 .call(xAxis);
 
             yAxis = d3.svg.axis()
@@ -317,7 +317,7 @@
                 .attr("x1", -1)
                 .attr("x2", -1)
                 .attr("y1", option.padding.top)
-                .attr("y2", drawArgs.size.height - option.padding.bottom);
+                .attr("y2", params.size.height - option.padding.bottom);
 
             // Create the hover text.
             /*
@@ -402,9 +402,9 @@
         // Chech whether the given coordination in available bound.
         function inBox(x, y) {
             return x >= option.padding.left &&
-                x <= drawArgs.size.width - option.padding.right &&
+                x <= params.size.width - option.padding.right &&
                 y >= option.padding.top &&
-                y <= drawArgs.size.height - option.padding.bottom;
+                y <= params.size.height - option.padding.bottom;
         }
 
         function formatValue(value, unit) {
