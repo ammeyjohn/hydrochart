@@ -74,7 +74,7 @@
             beginDraw();
             drawCurve();
             drawAxis();
-            //endDraw();
+            endDraw();
         }
 
         //// Defines all private methods ////
@@ -292,7 +292,9 @@
         function endDraw() {
 
             createHovers();
+            /*
             createTooltips();
+            */
 
             // Bind mouse events on svg element;            
             svg.on('mousemove', function() {
@@ -301,10 +303,10 @@
                 // Show or hide the hover line and move it.
                 if (inBox(pos[0], pos[1])) {
                     showHovers(pos);
-                    showTooltips(pos);
+                    //showTooltips(pos);
                 } else {
                     hideHovers(pos);
-                    hideTooltips(pos);
+                    //hideTooltips(pos);
                 }
             });
         }
