@@ -10,7 +10,7 @@
 	}
 
     .container {
-        width: 800px;
+        width: 98%;
         height: 300px;
         border: solid 1px black;
     }
@@ -63,6 +63,8 @@
 <body>
 	
     <div class="container" onselectstart="return false"></div>
+    <button id='update'>Update</button>
+    <button id='refresh'>Refresh</button>
 
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
@@ -126,6 +128,36 @@
 
 		var chart = new HydroChart('.container', option);
 		chart.draw(data);
+
+        $('#update').click(function(){
+
+            var id = data.length + 1;
+            data.push({
+                    id: id,
+                    name: id + '#',
+                    type: 'RSP',
+                    dataType: 'FREQUENCY',
+                    unit: 'Hz',
+                    values: [
+                        { time: curDate + ' 01:00:00', value: 42.6 },
+                        { time: curDate + ' 12:00:00', value: 43.1 },
+                        { time: curDate + ' 15:00:00', value: 44.7 },
+                        { time: curDate + ' 21:00:00', value: 45.3 },
+                        { time: curDate + ' 22:00:00', value: 45.6 },
+                        { time: endDate + ' 00:00:00', value: 47 },
+                    ]
+                });
+
+            chart.draw(data); 
+        });
+
+        $('#refresh').click(function(){
+            chart.refresh();
+        });
+
+        $(window).resize(function(){
+            chart.refresh();
+        });
 
 	</script>
 </body>

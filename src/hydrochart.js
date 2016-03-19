@@ -79,6 +79,14 @@
 
         this.draw = function(data) {
             preprocess(data);
+            this.refresh();
+        }
+
+        this.refresh = function() {
+
+            // Clear all svg elements.
+            element.html('');
+
             beginDraw();
             drawCurve();
             drawAxis();
@@ -99,6 +107,9 @@
                 console.warn("Input data is null or undfined.");
                 return null;
             }
+
+            // Clear timelines
+            timelines = [];
 
             // Process the raw data.
             for (var i in data) {
@@ -211,7 +222,7 @@
             var yScaleHeight = params.size.height - option.padding.top - option.padding.bottom;
             yScale = d3.scale.ordinal()
                 .domain(describe.barNames)
-                .rangeRoundBands([0, yScaleHeight]);
+                .rangeBands([0, yScaleHeight]);
 
         }
 
@@ -237,7 +248,6 @@
 
         function drawCurve() {
             drawCurveBar();
-            //drawCurveText();
         }
 
         function drawCurveBar() {
@@ -245,7 +255,8 @@
                 var line = timelines[i];
 
                 // Create svg group for each line
-                var top = yScale(line.name) + option.padding.top + (BAR_HEIGHT / 2) - BAR_STROKE_WIDTH - BAR_STROKE_WIDTH;
+                var top = yScale(line.name) + option.padding.top + (BAR_HEIGHT / 2) -
+                          Math.round(describe.barCount / 10) * 2;
                 var g = svg.append('g')
                     .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
 
@@ -367,7 +378,8 @@
 
         function createTooltips() {
             for (var i in timelines) {
-                var y = yScale(timelines[i].name) + option.padding.top + TEXT_HEIGHT / 2;
+                var y = yScale(timelines[i].name) + option.padding.top + TEXT_HEIGHT / 2 - 
+                        Math.round(describe.barCount / 10) * 1;
                 var tooltip = svg.append('text')
                     .attr('class', 'tooltip')
                     .text('00:00')
@@ -404,7 +416,7 @@
             }
 
             // Set tooltip x value.
-            if (pos[0] + width > params.size.width - option.padding.right) {
+            if (pos[0] + maxWidth > params.size.width - option.padding.right) {
                 for (var i in timelines) {
                     var width = timelines[i].tooltip.node().getBBox().width;
                     var x = pos[0] - width - 5;
