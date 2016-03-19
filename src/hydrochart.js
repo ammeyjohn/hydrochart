@@ -21,14 +21,15 @@
 
     // Defines all constant values
     var MINUTES_PER_DAY = 1440;
-    var BAR_WIDTH = 22;
+    var BAR_HEIGHT = 22;
     var BAR_STROKE_WIDTH = 1;
     var BAR_GAP_WIDTH = 10;
     var AXIS_WIDTH = 20;
     var CLASS_OPEN_STATE = 'rect open';
     var CLASS_CLOSE_STATE = 'rect close';
     var CLASS_FAULT_STATE = 'rect fault';
-    var TEXT_WIDTH = 14;
+    var TEXT_WIDTH = 12;
+    var TEXT_HEIGHT = 14;
 
     // Defines the time format to convert string to datetime.
     var time_format = d3.time.format('%Y-%m-%d %H:%M:%S');
@@ -103,7 +104,7 @@
                     if (isString(v.time)) {
                         v.time = time_format.parse(v.time);
                     }
-                    v.label = formatValue(v.value, line.unit);
+                    v.label = formatValue(parseInt(v.value.toFixed(0)), line.unit);
                 }
 
                 // Sort all values by time
@@ -181,7 +182,7 @@
 
                 // Calculate the chart height if not be set.
                 var chartHeight = option.padding.top + option.padding.bottom +
-                    describe.barCount * (BAR_WIDTH + BAR_GAP_WIDTH) +
+                    describe.barCount * (BAR_HEIGHT + BAR_GAP_WIDTH) +
                     AXIS_WIDTH;
                 params.size.height = chartHeight;
             } else {
@@ -236,7 +237,7 @@
                 var line = timelines[i];
 
                 // Create svg group for each line
-                var top = yScale(line.name) + option.padding.top + (BAR_WIDTH / 2) - BAR_STROKE_WIDTH - BAR_STROKE_WIDTH;
+                var top = yScale(line.name) + option.padding.top + (BAR_HEIGHT / 2) - BAR_STROKE_WIDTH - BAR_STROKE_WIDTH;
                 var g = svg.append('g')
                     .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
 
@@ -260,8 +261,8 @@
                         return d.width;
                     })
                     .attr('height', function(d, i) {
-                        d.height = BAR_WIDTH;
-                        return BAR_WIDTH;
+                        d.height = BAR_HEIGHT;
+                        return BAR_HEIGHT;
                     });
 
                 drawCurveText(g, line);
@@ -269,7 +270,6 @@
         }
 
         function drawCurveText(g, line) {
-
             g.selectAll('.label')
                 .data(line.points)
                 .enter()
@@ -285,7 +285,7 @@
                     return xScale(d.time) + 5;
                 })
                 .attr('y', function(d, i) {
-                    return 15;
+                    return TEXT_HEIGHT;
                 });
         }
 
