@@ -12,8 +12,12 @@
             left: 25,
             bottom: 30,
             right: 20
-        }
+        },
+        mode: 'Day'
     }
+
+    // Defines consts
+    var MODE_DAY = 'Day';
 
     // Defines all constant values
     var MINUTES_PER_DAY = 1440;
@@ -34,10 +38,9 @@
         this.version = '1.0';
 
         var element = null, // Container element
-            option = null, // Options            
-            raw_data = null, // The raw data
-            proc_data = null, // The processed data
-            drawArgs = {}; // The arguments for chart drawing
+            option = null, // Options             
+            timelines = [], // The processed data
+            params = {}; // The parameters for chart drawing
 
         var svg = null,
             xScale = null,
@@ -67,9 +70,9 @@
 
         this.draw = function(data) {
             preprocess(data);
-            beginDraw();            
-            drawCurve();
-            drawAxis();            
+            //beginDraw();
+            //drawCurve();
+            //drawAxis();
             //endDraw();
         }
 
@@ -77,7 +80,9 @@
 
         var describe = {
             startTime: null,
-            endTime: null
+            endTime: null,
+            barNames: null,
+            barCount: 0
         }
 
         function preprocess(data) {
@@ -85,54 +90,83 @@
                 console.warn("Input data is null or undfined.");
                 return null;
             }
-            raw_data = data;
-            proc_data = d3.map(raw_data, function(d) { return d.name });
-            proc_data.forEach(function(_, d) {
 
-                var points = d.points;
+            // Process the raw data.
+            for (var i in data) {
+                // Clone and protected the raw data.
+                var line = $.extend({}, data[i]);
+                timelines.push(line);
 
                 // Try to convert time string to Date object.
-                for(var i in points) {
-                    if(isString(points[i].time)) {                        
-                        points[i].time = time_format.parse(points[i].time);
-                        points[i].id = d.id;
-                    }                    
+                for (var i in line.values) {
+                    var v = line.values[i];
+                    if (isString(v.time)) {
+                        v.time = time_format.parse(v.time);
+                    }
+                    v.label = formatValue(v.value);
                 }
 
                 // Sort all values by time
-                var sorted_points = points.sort(function(a, b){ return a.time - b.time; });         
+                var sorted_values = line.values.sort(function(a, b) {
+                    return a.time - b.time;
+                });
 
                 // Merges the points with same value.
-                if(sorted_points.length > 1) {
-                    var merged_points = [ sorted_points[0] ];
-                    for(var i = 1, j = sorted_points.length; i < j; i++) {
-                        if(sorted_points[i].value !== sorted_points[i-1].value) {
-                            merged_points.push(sorted_points[i]);
-                        }                        
+                var merged_values = [sorted_values[0]];
+                for (var i = 1, j = sorted_values.length; i < j; i++) {
+                    if (sorted_values[i].value !== sorted_values[i - 1].value) {
+                        merged_values.push(sorted_values[i]);
                     }
-                    points = merged_points;
                 }
-                            
-                for(var i = 0, j = points.length; i < j; i++) {  
 
-                    points[i].parent = d;
+                for (var i = 0, j = merged_values.length; i < j; i++) {
+                    var v = merged_values[i];
 
                     // Make relation between neibour values  
-                    if(i > 0) { points[i].prev = points[i-1]; }
-                    if(i < j - 1) { points[i].next = points[i+1]; }
-
-                    // Prepare the data describe
-                    if (describe.startTime === null || points[i].time <= describe.startTime) {
-                        describe.startTime = points[i].time;
+                    if (i > 0) {
+                        v.prev = merged_values[i - 1];
                     }
-                    if (describe.endTime === null || points[i].time >= describe.endTime) {
-                        describe.endTime = points[i].time;
-                    }                    
-                }                
+                    if (i < j - 1) {
+                        v.next = merged_values[i + 1];
+                    }
+                }
 
+                // Day Mode
+                // The time of first point should 0:00 and 
+                // The time of last point should 0:00 in next day.
+                if (option.mode == MODE_DAY) {
+                    var first = getFirst(merged_values);
+                    if (first.time.getHours() !== 0 || first.time.getMinutes() !== 0) {
+                        first.time.setHours(0);
+                        first.time.setMinutes(0);
+                    }
 
-                d.points = points;
-            });
+                    var last = getLast(merged_values);
+                    if (last.time.getHours() !== 0 || last.time.getMinutes() !== 0) {
+
+                    }
+                }
+
+                // Rename points property
+                line.points = merged_values;
+                delete line.values;
+
+                for (var i in line.points) {
+                    var point = line.points[i];
+                    if (describe.startTime === null || point.time <= describe.startTime) {
+                        describe.startTime = point.time;
+                    }
+                    if (describe.endTime === null || point.time >= describe.endTime) {
+                        describe.endTime = point.time;
+                    }
+                }
+            }
+
+            // To statistic the values
+            describe.barCount = timelines.length;
+            describe.barNames = d3.map(timelines, function(d) {
+                return d.name
+            }).keys();
         }
 
         function beginDraw() {
@@ -160,10 +194,10 @@
                 .attr('height', drawArgs.size.height);
 
             var xScaleWidth = drawArgs.size.width - option.padding.left - option.padding.right;
-            xScale = d3.time.scale()                
+            xScale = d3.time.scale()
                 .domain([describe.startTime, describe.endTime])
                 .nice(d3.time.hour)
-                .range([0, xScaleWidth]);            
+                .range([0, xScaleWidth]);
 
             var yScaleHeight = drawArgs.size.height - option.padding.top - option.padding.bottom;
             yScale = d3.scale.ordinal()
@@ -180,7 +214,7 @@
                 .orient('bottom');
             svg.append('g')
                 .attr('class', 'axis')
-                .attr('transform', 'translate(' + option.padding.left + ',' + (drawArgs.size.height - option.padding.bottom) + ')')                
+                .attr('transform', 'translate(' + option.padding.left + ',' + (drawArgs.size.height - option.padding.bottom) + ')')
                 .call(xAxis);
 
             yAxis = d3.svg.axis()
@@ -199,11 +233,11 @@
 
         function drawCurveBar() {
 
-            proc_data.forEach(function(key, d){
+            proc_data.forEach(function(key, d) {
 
                 var top = yScale(d.name) + option.padding.top + (BAR_WIDTH / 2) - BAR_STROKE_WIDTH;
                 var g = svg.append('g')
-                           .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
+                    .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
 
                 g.selectAll('.rect')
                     .data(d.points)
@@ -220,9 +254,9 @@
                         d.y = yScale(d.parent.name);
                         return d.y;
                     })
-                    .attr('width', function(d, i) {                        
+                    .attr('width', function(d, i) {
                         d.width = 0;
-                        if(d.next) { 
+                        if (d.next) {
                             d.width = xScale(d.next.time) - xScale(d.time);
                         }
                         return d.width;
@@ -271,7 +305,7 @@
                 } else {
                     hideHovers(pos);
                     hideTooltips(pos);
-                }                
+                }
             });
         }
 
@@ -324,23 +358,27 @@
         }
 
         function createTooltips() {
-            var keys = d3.map(proc_data, function(d) { return d.text }).keys();
-            $.each(keys, function(i, key){
+            var keys = d3.map(proc_data, function(d) {
+                return d.text
+            }).keys();
+            $.each(keys, function(i, key) {
                 var y = yScale(key) + option.padding.top + TEXT_WIDTH / 2;
                 var tooltip = svg.append('text')
-                                 .attr('class', 'tooltip')
-                                 .text('00:00')
-                                 .style('opacity', 0)
-                                 .attr('x', -1)
-                                 .attr('y', y);
+                    .attr('class', 'tooltip')
+                    .text('00:00')
+                    .style('opacity', 0)
+                    .attr('x', -1)
+                    .attr('y', y);
                 tooltips.push(tooltip);
             });
         }
 
         function showTooltips(pos) {
             var time = xScale.invert(pos[0] - option.padding.left);
-            var searcher = d3.bisector(function(d) { return d.time; }).left;
-            for (var i = 0, j = tooltips.length; i < j; i++) {                
+            var searcher = d3.bisector(function(d) {
+                return d.time;
+            }).left;
+            for (var i = 0, j = tooltips.length; i < j; i++) {
 
                 var idx = searcher(proc_data, time);
                 var d = proc_data[idx];
@@ -348,17 +386,17 @@
 
                 var tooltip = tooltips[i]
                 tooltip.style('opacity', 1)
-                       .text(text)
-                       .attr('class', 'tooltip')                    
-                       .attr('x', pos[0] + 5);
+                    .text(text)
+                    .attr('class', 'tooltip')
+                    .attr('x', pos[0] + 5);
             }
         }
 
         function hideTooltips(pos) {
-            for (var i = 0, j = tooltips.length; i < j; i++) {                
+            for (var i = 0, j = tooltips.length; i < j; i++) {
                 tooltips[i].style('opacity', 0)
-                           .attr('x', -1);
-            }            
+                    .attr('x', -1);
+            }
         }
 
         // Chech whether the given coordination in available bound.
@@ -375,16 +413,18 @@
             else if (value === 1) text = '开';
             else text = value.toString() + ' ' + unit;
             return text;
-        }            
+        }
     }
 
 
     //// Defines the helper functions ////
 
     var formatTime = function(time) {
-        var dateStr = time.getFullYear() + '-' + time.getMonth() + '-' +  time.getDate();
-        var timeStr = time.toLocaleTimeString('zh-CN', { hour12: false }).substr(0, 5);
-        return dateStr + ' ' + timeStr;        
+        var dateStr = time.getFullYear() + '-' + time.getMonth() + '-' + time.getDate();
+        var timeStr = time.toLocaleTimeString('zh-CN', {
+            hour12: false
+        }).substr(0, 5);
+        return dateStr + ' ' + timeStr;
     }
 
     // Check whether the obj is null or undfined.
@@ -402,7 +442,7 @@
     }
 
     var getLast = function(values) {
-        return values[values.length-1];
+        return values[values.length - 1];
     }
 
     //// Exports HydroChart Component ////

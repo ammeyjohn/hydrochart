@@ -68,7 +68,7 @@
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
 	<script type="text/javascript" src="bower_components/moment/min/moment-with-locales.min.js"></script>
-	<script type="text/javascript" src="src/HydroChart.js?v=11"></script>
+	<script type="text/javascript" src="src/HydroChart.js?v=12"></script>
 	<script type="text/javascript">
 		
 		var option = {
@@ -83,7 +83,7 @@
                     type: 'CSP',
                     dataType: 'STATUS',
                     unit: 'Hz',
-                    points: [
+                    values: [
                         { time: curDate + ' 0:00:00', value: 1 },
                         { time: curDate + ' 03:00:00', value: 0 },
                         { time: curDate + ' 07:00:00', value: 1 },
@@ -98,7 +98,7 @@
                     type: 'CSP',
                     dataType: 'STATUS',
                     unit: 'Hz',
-                    points: [
+                    values: [
                         { time: curDate + ' 0:00:00', value: 1 },
                         { time: curDate + ' 04:00:00', value: 0 },
                         { time: curDate + ' 08:00:00', value: 1 },
@@ -112,10 +112,9 @@
                     id: 3,
                     name: '3#',
                     type: 'RSP',
-                    dataType: 'STATUS',
+                    dataType: 'FREQUENCY',
                     unit: 'Hz',
-                    points: [
-                	    { time: curDate + ' 0:00:00', value: 42.5 },
+                    values: [
                         { time: curDate + ' 05:00:00', value: 42.6 },
                         { time: curDate + ' 10:00:00', value: 43.1 },
                         { time: curDate + ' 15:00:00', value: 44.7 },
