@@ -103,7 +103,7 @@
                     if (isString(v.time)) {
                         v.time = time_format.parse(v.time);
                     }
-                    v.label = formatValue(v.value);
+                    v.label = formatValue(v.value, line.unit);
                 }
 
                 // Sort all values by time
@@ -228,7 +228,7 @@
 
         function drawCurve() {
             drawCurveBar();
-            drawCurveText();
+            //drawCurveText();
         }
 
         function drawCurveBar() {
@@ -264,7 +264,7 @@
                         return BAR_WIDTH;
                     });
 
-                //drawCurveText(g, line);
+                drawCurveText(g, line);
             }
         }
 
@@ -285,7 +285,7 @@
                     return xScale(d.time) + 5;
                 })
                 .attr('y', function(d, i) {
-                    return 5;
+                    return 15;
                 });
         }
 
