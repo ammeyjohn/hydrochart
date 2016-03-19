@@ -25,11 +25,16 @@
     var BAR_STROKE_WIDTH = 1;
     var BAR_GAP_WIDTH = 10;
     var AXIS_WIDTH = 20;
+    var TEXT_WIDTH = 12;
+    var TEXT_HEIGHT = 14;
+
+    // Defines all class name
     var CLASS_OPEN_STATE = 'rect open';
     var CLASS_CLOSE_STATE = 'rect close';
     var CLASS_FAULT_STATE = 'rect fault';
-    var TEXT_WIDTH = 12;
-    var TEXT_HEIGHT = 14;
+    var CLASS_OPEN_TOOLTIP = 'tooltip open';
+    var CLASS_CLOSE_TOOLTIP = 'tooltip close';
+    var CLASS_FAULT_TOOLTIP = 'tooltip fault';
 
     // Defines the time format to convert string to datetime.
     var time_format = d3.time.format('%Y-%m-%d %H:%M:%S');
@@ -50,8 +55,11 @@
             yAxis = null;
 
         var hoverLine = null,
-            hoverText = null,
-            tooltips = [];
+            hoverText = null;
+
+        var searcher = d3.bisector(function(d) {
+            return d.time;
+        }).left;
 
         // Get the chart container
         if (isNullOrUndefine(ele)) {
@@ -292,9 +300,7 @@
         function endDraw() {
 
             createHovers();
-            /*
             createTooltips();
-            */
 
             // Bind mouse events on svg element;            
             svg.on('mousemove', function() {
@@ -303,10 +309,10 @@
                 // Show or hide the hover line and move it.
                 if (inBox(pos[0], pos[1])) {
                     showHovers(pos);
-                    //showTooltips(pos);
+                    showTooltips(pos);
                 } else {
                     hideHovers(pos);
-                    //hideTooltips(pos);
+                    hideTooltips(pos);
                 }
             });
         }
@@ -360,43 +366,59 @@
         }
 
         function createTooltips() {
-            var keys = d3.map(proc_data, function(d) {
-                return d.text
-            }).keys();
-            $.each(keys, function(i, key) {
-                var y = yScale(key) + option.padding.top + TEXT_WIDTH / 2;
+            for (var i in timelines) {
+                var y = yScale(timelines[i].name) + option.padding.top + TEXT_HEIGHT / 2;
                 var tooltip = svg.append('text')
                     .attr('class', 'tooltip')
                     .text('00:00')
                     .style('opacity', 0)
                     .attr('x', -1)
                     .attr('y', y);
-                tooltips.push(tooltip);
-            });
-        }
-
-        function showTooltips(pos) {
-            var time = xScale.invert(pos[0] - option.padding.left);
-            var searcher = d3.bisector(function(d) {
-                return d.time;
-            }).left;
-            for (var i = 0, j = tooltips.length; i < j; i++) {
-
-                var idx = searcher(proc_data, time);
-                var d = proc_data[idx];
-                var text = d.text + ' ' + formatTime(time) + ' ' + formatValue(d.value, d.unit);
-
-                var tooltip = tooltips[i]
-                tooltip.style('opacity', 1)
-                    .text(text)
-                    .attr('class', 'tooltip')
-                    .attr('x', pos[0] + 5);
+                timelines[i].tooltip = tooltip;
             }
         }
 
+        function showTooltips(pos) {
+
+            // Get the time by mouse x
+            var time = xScale.invert(pos[0] - option.padding.left);
+
+            var maxWidth = 0;
+            for (var i in timelines) {
+                var line = timelines[i];
+
+                // Search the index of nearest time point
+                var idx = searcher(line.points, time);
+                var point = line.points[idx - 1];
+                var text = line.name + ' ' + formatTime(time) + ' ' + point.label;
+                var clazz = point.value >= 1 ? CLASS_OPEN_TOOLTIP : CLASS_CLOSE_TOOLTIP;
+
+                var tooltip = line.tooltip;
+                tooltip.style('opacity', 10)
+                    .text(text)
+                    .attr('class', clazz)
+                    .attr('x', pos[0] + 5);
+
+                var width = tooltip.node().getBBox().width;
+                if (width > maxWidth) maxWidth = width;
+            }
+
+            // Set tooltip x value.
+            if (pos[0] + width > params.size.width - option.padding.right) {
+                for (var i in timelines) {
+                    var width = timelines[i].tooltip.node().getBBox().width;
+                    var x = pos[0] - width - 5;
+                    timelines[i].tooltip
+                                .attr('x', x);
+                }
+            }
+
+        }
+
         function hideTooltips(pos) {
-            for (var i = 0, j = tooltips.length; i < j; i++) {
-                tooltips[i].style('opacity', 0)
+            for (var i in timelines) {
+                timelines[i].tooltip
+                    .style('opacity', 0)
                     .attr('x', -1);
             }
         }
@@ -406,7 +428,7 @@
             return x >= option.padding.left &&
                 x <= params.size.width - option.padding.right &&
                 y >= option.padding.top &&
-                y <= params.size.height - option.padding.bottom;
+                y <= params.size.height - option.padding.bottom + AXIS_WIDTH;
         }
 
         function formatValue(value, unit) {
