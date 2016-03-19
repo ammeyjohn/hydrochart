@@ -22,7 +22,7 @@
     // Defines all constant values
     var MINUTES_PER_DAY = 1440;
     var BAR_WIDTH = 22;
-    var BAR_STROKE_WIDTH = 2;
+    var BAR_STROKE_WIDTH = 1;
     var BAR_GAP_WIDTH = 10;
     var AXIS_WIDTH = 20;
     var CLASS_OPEN_STATE = 'rect open';
@@ -71,7 +71,7 @@
         this.draw = function(data) {
             preprocess(data);
             beginDraw();
-            //drawCurve();
+            drawCurve();
             drawAxis();
             //endDraw();
         }
@@ -228,19 +228,20 @@
 
         function drawCurve() {
             drawCurveBar();
-            //drawCurveText();
+            drawCurveText();
         }
 
         function drawCurveBar() {
+            for (var i in timelines) {
+                var line = timelines[i];
 
-            proc_data.forEach(function(key, d) {
-
-                var top = yScale(d.name) + option.padding.top + (BAR_WIDTH / 2) - BAR_STROKE_WIDTH;
+                // Create svg group for each line
+                var top = yScale(line.name) + option.padding.top + (BAR_WIDTH / 2) - BAR_STROKE_WIDTH - BAR_STROKE_WIDTH;
                 var g = svg.append('g')
                     .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
 
                 g.selectAll('.rect')
-                    .data(d.points)
+                    .data(line.points)
                     .enter()
                     .append('rect')
                     .attr('class', function(d, i) {
@@ -250,10 +251,7 @@
                         d.x = xScale(d.time);
                         return d.x;
                     })
-                    .attr('y', function(d, i) {
-                        d.y = yScale(d.parent.name);
-                        return d.y;
-                    })
+                    .attr('y', 0)
                     .attr('width', function(d, i) {
                         d.width = 0;
                         if (d.next) {
@@ -265,27 +263,29 @@
                         d.height = BAR_WIDTH;
                         return BAR_WIDTH;
                     });
-            });
+
+                //drawCurveText(g, line);
+            }
         }
 
-        function drawCurveText() {
-            svg.selectAll('.label')
-                .data(proc_data)
+        function drawCurveText(g, line) {
+
+            g.selectAll('.label')
+                .data(line.points)
                 .enter()
                 .append('text')
                 .filter(function(d) {
-                    return d.width > 15 && d.time !== d.next_time;
+                    return d.width > 15 && d.time !== d.next.time;
                 })
                 .attr('class', 'label')
                 .text(function(d) {
-                    d.label_text = formatValue(d.value, d.unit);
-                    return d.label_text;
+                    return d.label;
                 })
                 .attr('x', function(d, i) {
-                    return xScale(d.time) + option.padding.left + 5;
+                    return xScale(d.time) + 5;
                 })
                 .attr('y', function(d, i) {
-                    return yScale(d.text) + option.padding.top + TEXT_WIDTH + (BAR_WIDTH / 2) - 1;
+                    return 5;
                 });
         }
 
