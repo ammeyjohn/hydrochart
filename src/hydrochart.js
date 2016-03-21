@@ -232,7 +232,7 @@
                 .tickFormat(d3.time.format('%H:%M'))
                 .ticks(24)
                 .orient('bottom');
-            svg.append('g')
+            var aa = svg.append('g')
                 .attr('class', 'axis')
                 .attr('transform', 'translate(' + option.padding.left + ',' + (params.size.height - option.padding.bottom) + ')')
                 .call(xAxis);
@@ -260,8 +260,10 @@
                 var g = svg.append('g')
                     .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
 
-                g.selectAll('.rect')
-                    .data(line.points)
+                var rects = g.selectAll('.rect')
+                    .data(line.points, function(d){
+                        return d.time; 
+                    })
                     .enter()
                     .append('rect')
                     .attr('class', function(d, i) {

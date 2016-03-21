@@ -66,6 +66,12 @@
     <button id='update'>Update</button>
     <button id='refresh'>Refresh</button>
 
+    <div>
+        <button id='show'>Show</button>
+        <button id='hide'>Hide</button>
+        <button id='mousemove'>Mousemove</button>
+    </div>
+
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
 	<script type="text/javascript" src="bower_components/moment/min/moment-with-locales.min.js"></script>
@@ -157,6 +163,72 @@
 
         $(window).resize(function(){
             chart.refresh();
+        });
+
+        $('#hide').click(function() {
+            d3.transition()
+              .ease('linear')
+              .each(function(){
+                d3.selectAll('.tick text')
+                  .transition()
+                  .style('opacity', 0);
+              });
+        });
+
+        $('#show').click(function() {
+            d3.transition()
+              .ease('linear')
+              .each(function(){
+                d3.selectAll('.tick text')
+                  .transition()
+                  .style('opacity', 1);
+              });
+        });
+
+
+        d3.selectAll('.tick text')[0]
+          .forEach(function(d){
+              d3.select(d)
+                .on('mouseover', function(d){
+                    d3.select(this).transition()
+                        .duration(200)
+                        .style('opacity', 0);
+                })
+                .on('mouseout', function(d){
+                    d3.select(this).transition()
+                        .duration(200)
+                        .style('opacity', 1);
+                })
+          });
+
+        $('#mousemove').click(function() {
+
+            var texts = d3.selectAll('.tick')[0]
+                          .forEach(function(d){
+                              var data = d3.select(d).data();
+                                  d3.select(d).on("mouseover", function(d) {
+      //on mouse hover show the tooltip
+            div.transition()        
+                .duration(200)      
+                .style("opacity", .9);      
+            div .html(data) 
+                .style("left", (d3.event.pageX) + "px")     
+                .style("top", (d3.event.pageY - 28) + "px");    
+            })                  
+        .on("mouseout", function(d) {   
+          //on mouse out hide the tooltip
+            div.transition()        
+                .duration(500)      
+                .style("opacity", 0);   
+        });
+                          })
+      /*                    .on('mouseenter', function(d){
+                            //console.log(d);
+                          })
+                          .on('mouseout', function(d){
+
+                            //console.log(d);
+                          })*/
         });
 
 	</script>
