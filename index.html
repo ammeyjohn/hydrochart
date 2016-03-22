@@ -56,7 +56,12 @@
 
     .tooltip {   
         font-size: 12px;     
-    }    
+    }
+
+    .time_indicator {
+        fill: black;
+        font-size: 12px;     
+    }
 
 	</style>
 </head>
@@ -185,50 +190,34 @@
               });
         });
 
+        // d3.selectAll('svg')
+        //   .on('mousemove', function(d){
+        //     var pos = d3.mouse(this);
 
-        d3.selectAll('.tick text')[0]
-          .forEach(function(d){
-              d3.select(d)
-                .on('mouseover', function(d){
-                    d3.select(this).transition()
-                        .duration(200)
-                        .style('opacity', 0);
-                })
-                .on('mouseout', function(d){
-                    d3.select(this).transition()
-                        .duration(200)
-                        .style('opacity', 1);
-                })
-          });
+        //     d3.selectAll('.tick text')[0]
+        //       .forEach(function(d){
+
+        //       })
+            
+        //   });
+
+        // d3.selectAll('.tick text')[0]
+        //   .forEach(function(d){
+        //       d3.select(d)
+        //         .on('mouseover', function(d){
+        //             d3.select(this).transition()
+        //                 .duration(200)
+        //                 .style('opacity', 0);
+        //         })
+        //         .on('mouseout', function(d){
+        //             d3.select(this).transition()
+        //                 .duration(200)
+        //                 .style('opacity', 1);
+        //         })
+        //   });
 
         $('#mousemove').click(function() {
 
-            var texts = d3.selectAll('.tick')[0]
-                          .forEach(function(d){
-                              var data = d3.select(d).data();
-                                  d3.select(d).on("mouseover", function(d) {
-      //on mouse hover show the tooltip
-            div.transition()        
-                .duration(200)      
-                .style("opacity", .9);      
-            div .html(data) 
-                .style("left", (d3.event.pageX) + "px")     
-                .style("top", (d3.event.pageY - 28) + "px");    
-            })                  
-        .on("mouseout", function(d) {   
-          //on mouse out hide the tooltip
-            div.transition()        
-                .duration(500)      
-                .style("opacity", 0);   
-        });
-                          })
-      /*                    .on('mouseenter', function(d){
-                            //console.log(d);
-                          })
-                          .on('mouseout', function(d){
-
-                            //console.log(d);
-                          })*/
         });
 
 	</script>

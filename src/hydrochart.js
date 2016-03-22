@@ -13,13 +13,15 @@
             bottom: 30,
             right: 20
         },
-        mode: 'Day'
+        mode: 'Day',
+        showCurrent: true,
     }
 
     // Defines consts
     var MODE_DAY = 'Day';
 
     // Defines all constant values
+    var ONE_MINUTE = 1000;
     var MINUTES_PER_DAY = 1440;
     var BAR_HEIGHT = 22;
     var BAR_STROKE_WIDTH = 1;
@@ -37,7 +39,8 @@
     var CLASS_FAULT_TOOLTIP = 'tooltip fault';
 
     // Defines the time format to convert string to datetime.
-    var time_format = d3.time.format('%Y-%m-%d %H:%M:%S');
+    var toTime = d3.time.format('%Y-%m-%d %H:%M:%S');
+    var fromTime = d3.time.format('%H:%M');
 
     // Defines the hydochart type
     var HydroChart = function(ele, opt) {
@@ -56,6 +59,8 @@
 
         var hoverLine = null,
             hoverText = null;
+
+        var timeIndicator = null;
 
         var searcher = d3.bisector(function(d) {
             return d.time;
@@ -121,7 +126,7 @@
                 for (var i in line.values) {
                     var v = line.values[i];
                     if (isString(v.time)) {
-                        v.time = time_format.parse(v.time);
+                        v.time = toTime.parse(v.time);
                     }
                     v.label = formatValue(parseInt(v.value.toFixed(0)), line.unit);
                 }
@@ -256,13 +261,13 @@
 
                 // Create svg group for each line
                 var top = yScale(line.name) + option.padding.top + (BAR_HEIGHT / 2) -
-                          Math.round(describe.barCount / 10) * 2;
+                    Math.round(describe.barCount / 10) * 2;
                 var g = svg.append('g')
                     .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
 
                 var rects = g.selectAll('.rect')
-                    .data(line.points, function(d){
-                        return d.time; 
+                    .data(line.points, function(d) {
+                        return d.time;
                     })
                     .enter()
                     .append('rect')
@@ -328,6 +333,32 @@
                     hideTooltips(pos);
                 }
             });
+
+            // Show the current time indicator
+            if (option.showCurrent) {
+
+                // Create group of time indicator
+                timeIndicator = svg.append('text')
+                                   .attr('class', 'time_indicator')
+                                   .attr('x', 0)
+                                   .attr('y', params.size.height - option.padding.bottom + 18)
+                                   .text('00:00');
+
+                var startTimer = function() {
+                    window.setTimeout(function() {
+                        showCurrentTime();
+                        startTimer();
+                    }, ONE_MINUTE)
+                };
+                startTimer();
+            }
+        }
+
+        function showCurrentTime() {
+            var cur = new Date();
+            var x = xScale(cur);
+            timeIndicator.attr('x', x)
+                         .text(fromTime(cur));
         }
 
         function createHovers() {
@@ -357,6 +388,13 @@
                 .attr("x1", mouseX)
                 .attr("x2", mouseX)
 
+            // d3.selectAll('text')
+            //      .transition()
+            //      .duration(50)
+            //      .style('opacity', function(d){
+            //          return Math.abs(xScale(d) - pos[0]) < 1 ? 0 : 1;
+            //      });
+
             /*
             var time = xScale.invert(mouseX - option.padding.left);
             var text = time.toLocaleTimeString('zh-CN', {
@@ -380,8 +418,8 @@
 
         function createTooltips() {
             for (var i in timelines) {
-                var y = yScale(timelines[i].name) + option.padding.top + TEXT_HEIGHT / 2 - 
-                        Math.round(describe.barCount / 10) * 1;
+                var y = yScale(timelines[i].name) + option.padding.top + TEXT_HEIGHT / 2 -
+                    Math.round(describe.barCount / 10) * 1;
                 var tooltip = svg.append('text')
                     .attr('class', 'tooltip')
                     .text('00:00')
@@ -423,7 +461,7 @@
                     var width = timelines[i].tooltip.node().getBBox().width;
                     var x = pos[0] - width - 5;
                     timelines[i].tooltip
-                                .attr('x', x);
+                        .attr('x', x);
                 }
             }
 
