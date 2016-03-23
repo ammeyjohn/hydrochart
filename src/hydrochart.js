@@ -21,7 +21,7 @@
     var MODE_DAY = 'Day';
 
     // Defines all constant values
-    var ONE_MINUTE = 1000;
+    var ONE_SECOND = 1000;
     var MINUTES_PER_DAY = 1440;
     var BAR_HEIGHT = 22;
     var BAR_STROKE_WIDTH = 1;
@@ -238,7 +238,7 @@
                 .ticks(24)
                 .orient('bottom');
             var aa = svg.append('g')
-                .attr('class', 'axis')
+                .attr('class', 'axis x')
                 .attr('transform', 'translate(' + option.padding.left + ',' + (params.size.height - option.padding.bottom) + ')')
                 .call(xAxis);
 
@@ -246,7 +246,7 @@
                 .scale(yScale)
                 .orient('left');
             svg.append('g')
-                .attr('class', 'axis')
+                .attr('class', 'axis y')
                 .attr('transform', 'translate(' + option.padding.left + ',' + option.padding.top + ')')
                 .call(yAxis);
         }
@@ -338,27 +338,55 @@
             if (option.showCurrent) {
 
                 // Create group of time indicator
-                timeIndicator = svg.append('text')
-                                   .attr('class', 'time_indicator')
-                                   .attr('x', 0)
-                                   .attr('y', params.size.height - option.padding.bottom + 18)
-                                   .text('00:00');
+                createCurrentTime();
 
                 var startTimer = function() {
                     window.setTimeout(function() {
                         showCurrentTime();
                         startTimer();
-                    }, ONE_MINUTE)
+                    }, ONE_SECOND)
                 };
                 startTimer();
             }
         }
 
+        function createCurrentTime() {
+            var now = new Date();
+            timeIndicator = svg.append('g');
+            moveCurrentTime(now, timeIndicator);
+
+            timeIndicator.append('text')
+                .attr('class', 'time_indicator')
+                .attr('x', 9)
+                .text('^')
+            timeIndicator.append('text')
+                .attr('class', 'time_indicator_text')
+                .attr('y', 5)
+                .text(fromTime(now));
+        }
+
         function showCurrentTime() {
-            var cur = new Date();
-            var x = xScale(cur);
-            timeIndicator.attr('x', x)
-                         .text(fromTime(cur));
+
+            var now = new Date();
+            moveCurrentTime(now, timeIndicator);
+            timeIndicator.select('text.time_indicator_text')
+                .text(fromTime(now));
+
+            var dx = timeIndicator.select('text.time_indicator_text')
+                .node()
+                .getBoundingClientRect().width;
+            svg.selectAll('.axis.x text')
+                .transition()
+                .duration(100)
+                .style('opacity', function(d) {
+                    return Math.abs(xScale(d) - xScale(now)) < dx ? 0 : 1;
+                });
+        }
+
+        function moveCurrentTime(time, indicator) {
+            var x = xScale(time) + 11;
+            var y = params.size.height - option.padding.bottom + 12;
+            indicator.attr('transform', 'translate(' + x + ',' + y + ')')
         }
 
         function createHovers() {
@@ -387,13 +415,6 @@
             hoverLine.classed("hide", false)
                 .attr("x1", mouseX)
                 .attr("x2", mouseX)
-
-            // d3.selectAll('text')
-            //      .transition()
-            //      .duration(50)
-            //      .style('opacity', function(d){
-            //          return Math.abs(xScale(d) - pos[0]) < 1 ? 0 : 1;
-            //      });
 
             /*
             var time = xScale.invert(mouseX - option.padding.left);
