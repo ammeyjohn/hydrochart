@@ -51,3 +51,8 @@
     fill: blue;
     font-size: 12px;     
 }
+
+.drag_handler {
+    fill: blue;
+    cursor: ew-resize;
+}

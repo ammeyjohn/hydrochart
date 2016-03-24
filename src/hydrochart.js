@@ -15,6 +15,7 @@
         },
         mode: 'Day',
         showCurrent: true,
+        editable: true
     }
 
     // Defines consts
@@ -29,6 +30,7 @@
     var AXIS_WIDTH = 20;
     var TEXT_WIDTH = 12;
     var TEXT_HEIGHT = 14;
+    var DRAG_HANDLER = 4;
 
     // Defines all class name
     var CLASS_OPEN_STATE = 'rect open';
@@ -66,6 +68,10 @@
         var searcher = d3.bisector(function(d) {
             return d.time;
         }).left;
+
+        var drag = d3.behavior.drag()
+            .origin(Object)
+            .on("drag", resize);
 
         // Get the chart container
         if (isNullOrUndefine(ele)) {
@@ -146,7 +152,7 @@
                 }
 
                 // Make sure that the pump curve at least 2 points
-                if(merged_values.length == 1) {
+                if (merged_values.length == 1) {
                     var time = new Date(merged_values[0].time);
                     time.setDate(time.getDate() + 1);
                     time.setHours(0);
@@ -163,6 +169,7 @@
 
                 for (var i = 0, j = merged_values.length; i < j; i++) {
                     var v = merged_values[i];
+                    v.hash = Math.random().toString(36).substr(2);
 
                     // Make relation between neibour values  
                     if (i > 0) {
@@ -171,6 +178,7 @@
                     if (i < j - 1) {
                         v.next = merged_values[i + 1];
                     }
+                    v.parent = line;
                 }
 
                 // Day Mode
@@ -277,8 +285,7 @@
                 var line = timelines[i];
 
                 // Create svg group for each line
-                var top = yScale(line.name) + option.padding.top + ((BAR_HEIGHT - 2) / 2)
-                          - describe.barCount * 0.2;
+                var top = yScale(line.name) + option.padding.top + ((BAR_HEIGHT - 2) / 2) - describe.barCount * 0.2;
                 var g = svg.append('g')
                     .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
 
@@ -288,6 +295,9 @@
                     })
                     .enter()
                     .append('rect')
+                    .attr('id', function(d){
+                        return 'bar_' + d.hash;
+                    })
                     .attr('class', function(d, i) {
                         return d.value >= 1 ? CLASS_OPEN_STATE : CLASS_CLOSE_STATE;
                     })
@@ -309,6 +319,10 @@
                     });
 
                 drawCurveText(g, line);
+
+                if (option.editable) {
+                    drawDragHandler(g, line);
+                }
             }
         }
 
@@ -333,42 +347,77 @@
         }
 
         // To draw drag handler if edit is on.
-        function drawDragHandler() {
+        function drawDragHandler(g, line) {
+            g.selectAll('.drag_handler')
+                .data(line.points)
+                .enter()
+                .append('rect')
+                .attr('id', function(d){
+                    return 'drag_handler_' + d.hash;
+                })
+                .attr('class', 'drag_handler')
+                .attr('x', function(d, i) {
+                    return d.x + d.width - DRAG_HANDLER / 2;
+                })
+                .attr('y', 0)
+                .attr('width', DRAG_HANDLER)
+                .attr('height', BAR_HEIGHT)
+                .call(drag);
+        }
 
+        function resize(d) {
+            var handler = svg.select('#drag_handler_' + d.hash);
+            var x = handler.node().getBBox().x;
+            handler.attr('x', x + d3.event.dx);
+
+            var lbar = svg.select('#bar_' + d.hash);
+            var lwidth = lbar.node().getBBox().width;
+            lbar.attr('width', lwidth + d3.event.dx);
+
+            var rbar = svg.select('#bar_' + d.next.hash);
+            var rbox = rbar.node().getBBox();
+            rbar.attr('x', rbox.x + d3.event.dx)
+                 .attr('width', rbox.width - d3.event.dx);
         }
 
         function endDraw() {
 
-            createHovers();
-            createTooltips();
+            if (!option.editable) {
+                createHovers();
+                createTooltips();
 
-            // Bind mouse events on svg element;            
-            svg.on('mousemove', function() {
-                var pos = d3.mouse(this);
+                // Bind mouse events on svg element;            
+                svg.on('mousemove', function() {
+                    var pos = d3.mouse(this);
 
-                // Show or hide the hover line and move it.
-                if (inBox(pos[0], pos[1])) {
-                    showHovers(pos);
-                    showTooltips(pos);
-                } else {
-                    hideHovers(pos);
-                    hideTooltips(pos);
-                }
-            });
+                    // Show or hide the hover line and move it.
+                    if (inBox(pos[0], pos[1])) {
+                        showHovers(pos);
+                        showTooltips(pos);
+                    } else {
+                        hideHovers(pos);
+                        hideTooltips(pos);
+                    }
+                });
 
-            // Show the current time indicator
-            if (option.showCurrent) {
+                // Show the current time indicator
+                if (option.showCurrent) {
+                    var now = new Date();
+                    if (now >= describe.startTime &&
+                        now <= describe.endTime) {
 
-                // Create group of time indicator
-                createCurrentTime();
+                        // Create group of time indicator
+                        createCurrentTime();
 
-                var startTimer = function() {
-                    window.setTimeout(function() {
-                        showCurrentTime();
+                        var startTimer = function() {
+                            window.setTimeout(function() {
+                                showCurrentTime();
+                                startTimer();
+                            }, ONE_SECOND * 10)
+                        };
                         startTimer();
-                    }, ONE_SECOND * 10)
-                };
-                startTimer();
+                    }
+                }
             }
         }
 
