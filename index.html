@@ -5,16 +5,16 @@
 	<title>HydroChart</title>
     <link rel="stylesheet" type="text/css" href="src/style.css">
 	<style type="text/css">
-	body {
-		width: 100vw;
-		height: 100vh;
-	}
+        body {
+        	width: 100vw;
+        	height: 100vh;
+        }
 
-    .container {
-        width: 98%;
-        height: 300px;
-        border: solid 1px black;
-    }
+        .container {
+            width: 98%;
+            height: 300px;
+            border: solid 1px black;
+        }
 
 
 	</style>
@@ -44,6 +44,20 @@
     	var curDate = moment().format('YYYY-MM-DD');
     	var endDate = moment().add(1, 'day').format('YYYY-MM-DD');
 		var data = [{
+                    id: 4,
+                    name: '4#',
+                    type: 'CSP',
+                    dataType: 'FREQUENCY',
+                    unit: 'Hz',
+                    values: [
+                        { time: curDate + ' 0:00:00', value: 0 },
+                        { time: curDate + ' 10:00:00', value: 0 },
+                        { time: curDate + ' 15:00:00', value: 0 },
+                        { time: curDate + ' 20:00:00', value: 0 },
+                        { time: curDate + ' 23:00:00', value: 0 },
+                        { time: endDate + ' 00:00:00', value: 0 },
+                    ]
+                }, {
                     id: 1,
                     name: '1#',
                     type: 'CSP',

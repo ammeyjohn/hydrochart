@@ -144,6 +144,22 @@
                     }
                 }
 
+                // Make sure that the pump curve at least 2 points
+                if(merged_values.length == 1) {
+                    var time = new Date(merged_values[0].time);
+                    time.setDate(time.getDate() + 1);
+                    time.setHours(0);
+                    time.setMinutes(0);
+                    time.setSeconds(0);
+
+                    var point = {
+                        time: time,
+                        value: merged_values[0].value,
+                        label: merged_values[0].label
+                    }
+                    merged_values.push(point);
+                }
+
                 for (var i = 0, j = merged_values.length; i < j; i++) {
                     var v = merged_values[i];
 
@@ -260,8 +276,8 @@
                 var line = timelines[i];
 
                 // Create svg group for each line
-                var top = yScale(line.name) + option.padding.top + (BAR_HEIGHT / 2) -
-                    Math.round(describe.barCount / 10) * 2;
+                var top = yScale(line.name) + option.padding.top + ((BAR_HEIGHT - 2) / 2)
+                          - describe.barCount * 0.2;
                 var g = svg.append('g')
                     .attr('transform', 'translate(' + option.padding.left + ',' + top + ')');
 
@@ -344,7 +360,7 @@
                     window.setTimeout(function() {
                         showCurrentTime();
                         startTimer();
-                    }, ONE_SECOND)
+                    }, ONE_SECOND * 10)
                 };
                 startTimer();
             }
