@@ -41,6 +41,7 @@
     // Defines the time format to convert string to datetime.
     var toTime = d3.time.format('%Y-%m-%d %H:%M:%S');
     var fromTime = d3.time.format('%H:%M');
+    var fromTimeToLong = d3.time.format('%Y-%m-%d %H:%M');
 
     // Defines the hydochart type
     var HydroChart = function(ele, opt) {
@@ -331,6 +332,11 @@
                 });
         }
 
+        // To draw drag handler if edit is on.
+        function drawDragHandler() {
+
+        }
+
         function endDraw() {
 
             createHovers();
@@ -379,6 +385,8 @@
                 .attr('class', 'time_indicator_text')
                 .attr('y', 5)
                 .text(fromTime(now));
+
+            hideAxisText(now);
         }
 
         function showCurrentTime() {
@@ -387,7 +395,11 @@
             moveCurrentTime(now, timeIndicator);
             timeIndicator.select('text.time_indicator_text')
                 .text(fromTime(now));
+            hideAxisText(now);
+        }
 
+        // To hide axis x text if current time covered on it.
+        function hideAxisText(time) {
             var dx = timeIndicator.select('text.time_indicator_text')
                 .node()
                 .getBoundingClientRect().width;
@@ -395,7 +407,7 @@
                 .transition()
                 .duration(100)
                 .style('opacity', function(d) {
-                    return Math.abs(xScale(d) - xScale(now)) < dx ? 0 : 1;
+                    return Math.abs(xScale(d) - xScale(time)) < dx ? 0 : 1;
                 });
         }
 
@@ -479,7 +491,7 @@
                 // Search the index of nearest time point
                 var idx = searcher(line.points, time);
                 var point = line.points[idx - 1];
-                var text = line.name + ' ' + formatTime(time) + ' ' + point.label;
+                var text = line.name + ' ' + fromTimeToLong(time) + ' ' + point.label;
                 var clazz = point.value >= 1 ? CLASS_OPEN_TOOLTIP : CLASS_CLOSE_TOOLTIP;
 
                 var tooltip = line.tooltip;
@@ -531,14 +543,6 @@
 
 
     //// Defines the helper functions ////
-
-    var formatTime = function(time) {
-        var dateStr = time.getFullYear() + '-' + time.getMonth() + '-' + time.getDate();
-        var timeStr = time.toLocaleTimeString('zh-CN', {
-            hour12: false
-        }).substr(0, 5);
-        return dateStr + ' ' + timeStr;
-    }
 
     // Check whether the obj is null or undfined.
     var isNullOrUndefine = function(obj) {
