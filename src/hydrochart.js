@@ -31,12 +31,12 @@
     var TEXT_HEIGHT = 14;
 
     // Defines all class name
-    var CLASS_OPEN_STATE = 'rect open';
-    var CLASS_CLOSE_STATE = 'rect close';
-    var CLASS_FAULT_STATE = 'rect fault';
-    var CLASS_OPEN_TOOLTIP = 'tooltip open';
-    var CLASS_CLOSE_TOOLTIP = 'tooltip close';
-    var CLASS_FAULT_TOOLTIP = 'tooltip fault';
+    var CLASS_OPEN_STATE = 'rect open_state';
+    var CLASS_CLOSE_STATE = 'rect close_state';
+    var CLASS_FAULT_STATE = 'rect fault_state';
+    var CLASS_OPEN_TOOLTIP = 'tooltip open_state';
+    var CLASS_CLOSE_TOOLTIP = 'tooltip close_state';
+    var CLASS_FAULT_TOOLTIP = 'tooltip fault_state';
 
     // Defines the time format to convert string to datetime.
     var toTime = d3.time.format('%Y-%m-%d %H:%M:%S');

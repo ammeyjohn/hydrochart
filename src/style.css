@@ -1,53 +1,53 @@
-.hydrochart .axis path,
-.hydrochart .axis line{
+.axis path,
+.axis line{
 	fill: none;
 	stroke: black;
 	shape-rendering: crispEdges;
 }
-.hydrochart .axis text {
+.axis text {
 	font-family: sans-serif;
 	font-size: 11px;
 }
 
-.hydrochart .open {
+.open_state {
     fill: #52B261;        
 }
 
-.hydrochart .close {
+.close_state {
     fill: #E36B6B;
 }
 
-.hydrochart .rect {
+.rect {
     stroke: white;
     stroke-width: 1px;
 }
 
-.hydrochart .label {
+.label {
     fill: white;
     font-size: 12px;
 }
 
-.hydrochart .hover_line {        
+.hover_line {        
     stroke: black;
     stroke-width: 2px;        
 }
 
-.hydrochart .hover_text {
+.hover_text {
     fill: blue;
     font-size: 12px; 
 }
 
-.hydrochart .tooltip {   
+.tooltip {   
     font-size: 12px;     
 }
 
-.hydrochart .time_indicator {
+.time_indicator {
     fill: blue;
     font-weight: bolder;
     font-size: 18px;     
 }
 
-.hydrochart .time_indicator_text {
+.time_indicator_text {
     fill: blue;
     font-size: 12px;     
 }
