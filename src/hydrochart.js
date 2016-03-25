@@ -77,6 +77,7 @@
                 element = ele;
             }
         }
+        element.attr('class', 'hydrochart');
 
         // Get the chart option
         option = $.extend({}, default_option, opt);
