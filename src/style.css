@@ -1,58 +1,24 @@
+.axis {
+  font: 10px sans-serif;
+}
+
 .axis path,
-.axis line{
-	fill: none;
-	stroke: black;
-	shape-rendering: crispEdges;
-}
-.axis text {
-	font-family: sans-serif;
-	font-size: 11px;
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
 }
 
-.open {
-    fill: #52B261;        
+.axis--x path {
+  /*display: none;*/
 }
 
-.close {
-    fill: #E36B6B;
+.axis--y path {
+	
 }
 
-.rect {
-    stroke: white;
-    stroke-width: 1px;
-}
-
-.label {
-    fill: white;
-    font-size: 12px;
-}
-
-.hover_line {        
-    stroke: black;
-    stroke-width: 2px;        
-}
-
-.hover_text {
-    fill: blue;
-    font-size: 12px; 
-}
-
-.tooltip {   
-    font-size: 12px;     
-}
-
-.time_indicator {
-    fill: blue;
-    font-weight: bolder;
-    font-size: 18px;     
-}
-
-.time_indicator_text {
-    fill: blue;
-    font-size: 12px;     
-}
-
-.drag_handler {
-    fill: blue;
-    cursor: ew-resize;
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
 }
