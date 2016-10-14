@@ -17,8 +17,22 @@
 	
 }
 
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
 .line {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
+}
+
+.bar {
+  fill: steelblue;
+}
+
+.focus circle {
+  fill: none;
+  stroke: steelblue;
 }
